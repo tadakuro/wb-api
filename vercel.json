@@ -1,10 +1,13 @@
 {
   "version": 2,
   "routes": [
+    { "src": "/.well-known/discord", "dest": "/public/.well-known/discord" },
+    { "src": "/api/ping",     "dest": "/api/ping.js"     },
     { "src": "/api/verify",   "dest": "/api/verify.js"   },
     { "src": "/api/register", "dest": "/api/register.js" },
     { "src": "/api/grant",    "dest": "/api/grant.js"    },
     { "src": "/api/revoke",   "dest": "/api/revoke.js"   },
-    { "src": "/api/sessions", "dest": "/api/sessions.js" }
+    { "src": "/api/sessions", "dest": "/api/sessions.js" },
+    { "src": "/(.*)",         "dest": "/public/index.html" }
   ]
 }
