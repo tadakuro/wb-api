@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "routes": [
+    { "src": "/api/verify",   "dest": "/api/verify.js"   },
+    { "src": "/api/register", "dest": "/api/register.js" },
+    { "src": "/api/grant",    "dest": "/api/grant.js"    },
+    { "src": "/api/revoke",   "dest": "/api/revoke.js"   },
+    { "src": "/api/sessions", "dest": "/api/sessions.js" }
+  ]
+}
