@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WaveBoard API — Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #06080c;
+      --surface:   #0b0f16;
+      --card:      #0f1520;
+      --card-hover:#131a27;
+      --border:    #1a2438;
+      --border-lit:#243048;
+      --cyan:      #00d4ff;
+      --cyan-dim:  #00d4ff18;
+      --cyan-mid:  #00d4ff35;
+      --green:     #00e676;
+      --green-dim: #00e67618;
+      --red:       #ff3c6e;
+      --red-dim:   #ff3c6e18;
+      --amber:     #ffb300;
+      --amber-dim: #ffb30018;
+      --violet:    #9d6eff;
+      --violet-dim:#9d6eff18;
+      --text:      #dde6f0;
+      --muted:     #4a5c72;
+      --secondary: #7a90a8;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      line-height: 1.65;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::after {
+      content: '';
+      position: fixed; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 400px;
+      background: radial-gradient(ellipse, #00d4ff07 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: sticky; top: 0; height: 100vh;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      display: flex; flex-direction: column;
+      overflow-y: auto; flex-shrink: 0;
+    }
+
+    .sidebar-brand {
+      padding: 28px 24px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-wave {
+      font-size: 10px; font-weight: 700; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+    }
+    .brand-name {
+      font-family: 'Space Mono', monospace;
+      font-size: 15px; font-weight: 700; color: var(--cyan);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .brand-name .tilde { opacity: 0.4; }
+    .brand-v {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px; color: var(--muted);
+      background: var(--card); border: 1px solid var(--border);
+      padding: 1px 6px; border-radius: 4px;
+      margin-top: 6px; display: inline-block;
+    }
+
+    .status-pill {
+      margin: 16px 24px 0;
+      display: flex; align-items: center; gap: 8px;
+      background: var(--green-dim); border: 1px solid #00e67630;
+      border-radius: 8px; padding: 8px 12px;
+      font-size: 11px; font-weight: 500; color: var(--green);
+      transition: all 0.3s;
+    }
+    .status-pill.checking { color: var(--amber); background: var(--amber-dim); border-color: #ffb30030; }
+    .status-pill.offline  { color: var(--red);   background: var(--red-dim);   border-color: #ff3c6e30; }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor; box-shadow: 0 0 6px currentColor; flex-shrink: 0;
+    }
+    .status-dot.pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .nav { padding: 20px 0; flex: 1; }
+    .nav-group { margin-bottom: 24px; }
+    .nav-label {
+      font-size: 9px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--muted);
+      padding: 0 24px; margin-bottom: 4px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 24px; cursor: pointer;
+      color: var(--secondary); font-size: 13px;
+      transition: all 0.15s; text-decoration: none;
+      border-left: 2px solid transparent;
+    }
+    .nav-item:hover { color: var(--text); background: #ffffff05; }
+    .nav-item.active { color: var(--cyan); border-left-color: var(--cyan); background: var(--cyan-dim); }
+    .nav-method {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px; font-weight: 700; padding: 1px 5px;
+      border-radius: 3px; flex-shrink: 0;
+    }
+    .nm-get  { background: var(--green-dim); color: var(--green); border: 1px solid #00e67630; }
+    .nm-post { background: var(--cyan-dim);  color: var(--cyan);  border: 1px solid #00d4ff30; }
+
+    .sidebar-footer {
+      padding: 16px 24px; border-top: 1px solid var(--border);
+      font-size: 11px; color: var(--muted);
+    }
+
+    /* ── Main ── */
+    .main { padding: 48px 56px 80px; min-width: 0; }
+
+    .page-header { margin-bottom: 52px; animation: fadeIn 0.5s ease both; }
+    .page-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 26px; font-weight: 700;
+      color: var(--text); line-height: 1.2; margin-bottom: 10px;
+    }
+    .page-title span { color: var(--cyan); }
+    .page-subtitle { color: var(--secondary); font-size: 14px; max-width: 540px; }
+
+    .meta-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+    .meta-chip {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 7px 13px; font-size: 12px;
+    }
+    .mc-label { color: var(--muted); margin-right: 2px; }
+    .mc-val   { color: var(--text); font-family: 'Space Mono', monospace; font-size: 11px; }
+
+    .section { margin-bottom: 52px; scroll-margin-top: 32px; }
+    .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .section-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--muted); white-space: nowrap;
+    }
+    .section-line { flex: 1; height: 1px; background: var(--border); }
+
+    .info-box, .warn-box {
+      border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px;
+      display: flex; gap: 10px; align-items: flex-start; line-height: 1.6;
+    }
+    .info-box { background: var(--cyan-dim); border: 1px solid var(--cyan-mid); color: var(--cyan); }
+    .warn-box { background: var(--amber-dim); border: 1px solid #ffb30035; color: var(--amber); }
+    .info-box code, .warn-box code {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      background: #ffffff10; padding: 1px 5px; border-radius: 3px;
+    }
+
+    .overview-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+    .ov-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; transition: border-color 0.2s;
+    }
+    .ov-card:hover { border-color: var(--border-lit); }
+    .ov-label { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+    .ov-val   { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--cyan); }
+
+    .endpoint {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; margin-bottom: 10px; overflow: hidden;
+      transition: border-color 0.2s;
+      animation: fadeIn 0.4s ease both;
+    }
+    .endpoint:nth-child(2){animation-delay:.05s}
+    .endpoint:nth-child(3){animation-delay:.10s}
+    .endpoint:nth-child(4){animation-delay:.15s}
+    .endpoint:nth-child(5){animation-delay:.20s}
+    .endpoint.open { border-color: var(--border-lit); }
+
+    .endpoint-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 18px; cursor: pointer;
+      user-select: none; transition: background 0.15s;
+    }
+    .endpoint-header:hover { background: var(--card-hover); }
+
+    .method-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px; font-weight: 700;
+      padding: 3px 9px; border-radius: 5px;
+      min-width: 46px; text-align: center; flex-shrink: 0;
+    }
+    .mb-get  { background: var(--green-dim); color: var(--green); border: 1px solid #00e67635; }
+    .mb-post { background: var(--cyan-dim);  color: var(--cyan);  border: 1px solid #00d4ff35; }
+
+    .ep-path { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--text); flex: 1; }
+    .ep-path .ep-base { color: var(--muted); }
+
+    .auth-tag {
+      font-size: 10px; font-weight: 600; padding: 2px 9px;
+      border-radius: 99px; flex-shrink: 0;
+    }
+    .at-bot    { background: var(--violet-dim); color: var(--violet); border: 1px solid #9d6eff35; }
+    .at-public { background: var(--green-dim);  color: var(--green);  border: 1px solid #00e67630; }
+
+    .ep-toggle { color: var(--muted); font-size: 11px; transition: transform 0.25s; flex-shrink: 0; }
+    .endpoint.open .ep-toggle { transform: rotate(90deg); }
+
+    .endpoint-body { display: none; border-top: 1px solid var(--border); padding: 18px 18px 22px; }
+    .endpoint.open .endpoint-body { display: block; }
+
+    .ep-desc { color: var(--secondary); font-size: 13px; margin-bottom: 18px; line-height: 1.7; }
+    .ep-desc code {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 1px 5px; border-radius: 3px; color: var(--cyan);
+    }
+
+    .param-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--muted); margin: 16px 0 7px;
+    }
+    .param-label:first-child { margin-top: 0; }
+
+    .param-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+      border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden; margin-bottom: 4px;
+    }
+    .param-table th {
+      background: var(--surface); color: var(--muted);
+      font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+      text-transform: uppercase; padding: 7px 12px; text-align: left;
+    }
+    .param-table td { padding: 8px 12px; border-top: 1px solid var(--border); color: var(--secondary); vertical-align: top; }
+    .param-table td:first-child { color: var(--text); font-family: 'Space Mono', monospace; font-size: 11px; white-space: nowrap; }
+    .param-table td:nth-child(2) { color: var(--violet); font-family: 'Space Mono', monospace; font-size: 11px; }
+    .req { color: var(--red);   font-size: 9px; font-weight: 700; margin-left: 5px; }
+    .opt { color: var(--muted); font-size: 9px; margin-left: 5px; }
+
+    .code-block {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden; margin-bottom: 4px;
+    }
+    .code-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 12px; border-bottom: 1px solid var(--border); background: #ffffff03;
+    }
+    .code-bar-label { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; }
+    .code-copy {
+      font-size: 10px; color: var(--muted); cursor: pointer;
+      background: none; border: none; padding: 2px 6px;
+      border-radius: 4px; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+    }
+    .code-copy:hover { color: var(--cyan); background: var(--cyan-dim); }
+
+    pre {
+      padding: 14px 16px; font-size: 12px;
+      font-family: 'Space Mono', monospace;
+      overflow-x: auto; color: var(--text); line-height: 1.8; margin: 0;
+    }
+    .ck{color:var(--cyan)} .cs{color:var(--amber)} .cb{color:var(--green)}
+    .cn{color:var(--violet)} .cm{color:var(--muted)} .cr{color:var(--red)}
+
+    .error-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    }
+    .error-table th {
+      text-align: left; padding: 8px 14px; background: var(--surface);
+      color: var(--muted); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .error-table td { padding: 10px 14px; border-top: 1px solid var(--border); color: var(--secondary); }
+    .error-table td:first-child { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; width: 60px; }
+    .e400{color:var(--amber)} .e401{color:var(--red)} .e404{color:var(--violet)}
+    .e405{color:var(--secondary)} .e500{color:var(--red)}
+
+    .deploy-steps { display: flex; flex-direction: column; gap: 16px; }
+    .deploy-step  { display: grid; grid-template-columns: 32px 1fr; gap: 14px; align-items: start; }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--cyan-dim); border: 1px solid var(--cyan-mid);
+      color: var(--cyan); font-family: 'Space Mono', monospace;
+      font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .step-body p { color: var(--secondary); font-size: 13px; margin-bottom: 8px; }
+
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    .fade-in { animation: fadeIn 0.5s ease both; }
+
+    @media(max-width:768px){
+      .shell{grid-template-columns:1fr}
+      .sidebar{position:static;height:auto}
+      .main{padding:32px 24px 60px}
+      .overview-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-wave">WaveBoard</div>
+      <div class="brand-name"><span class="tilde">〜</span> API Docs</div>
+      <div class="brand-v">v1.0.0</div>
+    </div>
+
+    <div class="status-pill checking" id="statusPill">
+      <div class="status-dot pulse" id="statusDot"></div>
+      <span id="statusText">Checking...</span>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-group">
+        <div class="nav-label">Overview</div>
+        <a class="nav-item active" href="#overview">Introduction</a>
+        <a class="nav-item" href="#errors">Error Codes</a>
+        <a class="nav-item" href="#deploy">Deployment</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Public</div>
+        <a class="nav-item" href="#ping"><span class="nav-method nm-get">GET</span>/api/ping</a>
+        <a class="nav-item" href="#verify"><span class="nav-method nm-get">GET</span>/api/verify</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Bot Only</div>
+        <a class="nav-item" href="#register"><span class="nav-method nm-post">POST</span>/api/register</a>
+        <a class="nav-item" href="#grant"><span class="nav-method nm-post">POST</span>/api/grant</a>
+        <a class="nav-item" href="#revoke"><span class="nav-method nm-post">POST</span>/api/revoke</a>
+        <a class="nav-item" href="#sessions"><span class="nav-method nm-get">GET</span>/api/sessions</a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">Stream dashboard for live creators</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="page-header fade-in">
+      <div class="page-title">WaveBoard <span>API</span></div>
+      <div class="page-subtitle">Session key management for the WaveBoard desktop app. Vercel serverless + MongoDB Atlas, authenticated via Discord bot.</div>
+      <div class="meta-row">
+        <div class="meta-chip"><span class="mc-label">Base URL</span><span class="mc-val">your-project.vercel.app</span></div>
+        <div class="meta-chip"><span class="mc-label">Database</span><span class="mc-val">MongoDB Atlas</span></div>
+        <div class="meta-chip"><span class="mc-label">Runtime</span><span class="mc-val">Vercel Serverless</span></div>
+        <div class="meta-chip"><span class="mc-label">Auth</span><span class="mc-val">x-bot-secret</span></div>
+      </div>
+    </div>
+
+    <!-- Overview -->
+    <div class="section fade-in" id="overview">
+      <div class="section-head"><span class="section-title">Overview</span><div class="section-line"></div></div>
+      <div class="overview-grid">
+        <div class="ov-card"><div class="ov-label">Public Endpoints</div><div class="ov-val">/api/ping &nbsp;/api/verify</div></div>
+        <div class="ov-card"><div class="ov-label">Bot-Only Endpoints</div><div class="ov-val">/api/register &nbsp;/api/grant &nbsp;/api/revoke &nbsp;/api/sessions</div></div>
+        <div class="ov-card"><div class="ov-label">Session Key Format</div><div class="ov-val">SK-[12chars]-[year]</div></div>
+        <div class="ov-card"><div class="ov-label">Plans</div><div class="ov-val">free &nbsp;|&nbsp; pro</div></div>
+      </div>
+      <div class="info-box">
+        <span>💡</span>
+        <span>Bot-only endpoints require the <code>x-bot-secret</code> header matching your <code>BOT_SECRET</code> env var. Only your Discord bot should call these routes — end users authenticate via <code>/api/verify</code> with their session key.</span>
+      </div>
+      <p class="param-label">Environment Variables</p>
+      <table class="param-table">
+        <tr><th>Variable</th><th>Type</th><th>Description</th></tr>
+        <tr><td>MONGODB_URI</td><td>string</td><td>MongoDB Atlas connection string</td></tr>
+        <tr><td>MONGODB_DB</td><td>string</td><td>Database name — defaults to <code>waveboard</code></td></tr>
+        <tr><td>BOT_SECRET</td><td>string</td><td>Shared secret between this API and your Discord bot</td></tr>
+      </table>
+    </div>
+
+    <!-- Public Endpoints -->
+    <div class="section" id="public-endpoints">
+      <div class="section-head"><span class="section-title">Public Endpoints</span><div class="section-line"></div></div>
+
+      <div class="endpoint open" id="ping">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method-badge mb-get">GET</span>
+          <span class="ep-path"><span class="ep-base">/api/</span>ping</span>
+          <span class="auth-tag at-public">Public</span>
+          <span class="ep-toggle">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="ep-desc">Health check. Returns API status and current timestamp. Use this to confirm the deployment is live.</p>
+          <p class="param-label">Response 200</p>
+          <div class="code-block">
+            <div class="code-bar"><span class="code-bar-label">json</span><button class="code-copy" onclick="copyCode(this)">copy</button></div>
+            <pre>{
+  <span class="ck">"ok"</span>:        <span class="cb">true</span>,
+  <span class="ck">"version"</span>:   <span class="cs">"1.0.0"</span>,
+  <span class="ck">"status"</span>:    <span class="cs">"online"</span>,
+  <span class="ck">"timestamp"</span>: <span class="cs">"2025-01-01T00:00:00.000Z"</span>
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="endpoint" id="verify">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method-badge mb-get">GET</span>
+          <span class="ep-path"><span class="ep-base">/api/</span>verify</span>
+          <span class="auth-tag at-public">Public</span>
+          <span class="ep-toggle">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="ep-desc">Verify a session key and return the associated user. Called by the WaveBoard desktop app on startup. Also updates the user's <code>lastAccess</code> timestamp.</p>
+          <p class="param-label">Query Parameters</p>
+          <table class="param-table">
+            <tr><th>Param</th><th>Type</th><th>Description</th></tr>
+            <tr><td>key<span class="req">required</span></td><td>string</td><td>Session key — e.g. <code>SK-AbCd1234-2025</code></td></tr>
+          </table>
+          <p class="param-label">Response 200</p>
+          <div class="code-block">
+            <div class="code-bar"><span class="code-bar-label">json</span><button class="code-copy" onclick="copyCode(this)">copy</button></div>
+            <pre>{
+  <span class="ck">"ok"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"key"</span>:         <span class="cs">"SK-AbCd1234-2025"</span>,
+    <span class="ck">"displayName"</span>: <span class="cs">"StreamerName"</span>,
+    <span class="ck">"discordId"</span>:   <span class="cs">"123456789012345678"</span>,
+    <span class="ck">"plan"</span>:        <span class="cs">"free"</span>,
+    <span class="ck">"createdAt"</span>:   <span class="cs">"2025-01-01T00:00:00.000Z"</span>
+  }
+}</pre>
+          </div>
+          <p class="param-label">Response 404</p>
+          <div class="code-block">
+            <div class="code-bar"><span class="code-bar-label">json</span></div>
+            <pre>{ <span class="ck">"ok"</span>: <span class="cr">false</span>, <span class="ck">"error"</span>: <span class="cs">"Session not found. Check your key or register via Discord."</span> }</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bot-Only -->
+    <div class="section" id="bot-endpoints">
+      <div class="section-head"><span class="section-title">Bot-Only Endpoints</span><div class="section-line"></div></div>
+      <div class="warn-box">
+        <span>🔒</span>
+        <span>These endpoints require the <code>x-bot-secret</code> header. Called exclusively by the Discord bot — never expose this secret to end users.</span>
+      </div>
+
+      <div class="endpoint" id="register">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method-badge mb-post">POST</span>
+          <span class="ep-path"><span class="ep-base">/api/</span>register</span>
+          <span class="auth-tag at-bot">Bot Only</span>
+          <span class="ep-toggle">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="ep-desc">Register a new user and generate their session key. Triggered when a user runs <code>/register</code> in Discord. If already registered, returns their existing session without creating a duplicate.</p>
+          <p class="param-label">Headers</p>
+          <table class="param-table">
+            <tr><th>Header</th><th>Type</th><th>Description</th></tr>
+            <tr><td>x-bot-secret<span class="req">required</span></td><td>string</td><td>Must match <code>BOT_SECRET</code> env var</td></tr>
+            <tr><td>Content-Type<span class="opt">optional</span></td><td>string</td><td><code>application/json</code></td></tr>
+          </table>
+          <p class="param-label">Request Body</p>
+          <table class="param-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            <tr><td>discordId<span class="req">required</span></td><td>string</td><td>User's Discord snowflake ID</td></tr>
+            <tr><td>displayName<span class="req">required</span></td><td>string</td><td>User's Discord display name</td></tr>
+          </table>
+          <p class="param-label">Response 201 — New user created</p>
+          <div class="code-block">
+            <div class="code-bar"><span class="code-bar-label">json</span><button class="code-copy" onclick="copyCode(this)">copy</button></div>
+            <pre>{
+  <span class="ck">"ok"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"key"</span>:         <span class="cs">"SK-AbCd1234-2025"</span>,
+    <span class="ck">"displayName"</span>: <span class="cs">"StreamerName"</span>,
+    <span class="ck">"discordId"</span>:   <span class="cs">"123456789012345678"</span>,
+    <span class="ck">"plan"</span>:        <span class="cs">"free"</span>,
+    <span class="ck">"createdAt"</span>:   <span class="cs">"2025-01-01T00:00:00.000Z"</span>
+  }
+}</pre>
+          </div>
+          <p class="param-label">Response 200 — Already registered</p>
+          <div class="code-block">
+            <div class="code-bar"><span class="code-bar-label">json</span></div>
+            <pre>{ <span class="ck">"ok"</span>: <span class="cb">true</span>, <span class="ck">"alreadyExists"</span>: <span class="cb">true</span>, <span class="ck">"data"</span>: { <span class="cm">/* same as 201 */</span> } }</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="endpoint" id="grant">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method-badge mb-post">POST</span>
+          <span class="ep-path"><span class="ep-base">/api/</span>grant</span>
+          <span class="auth-tag at-bot">Bot Only</span>
+          <span class="ep-toggle">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="ep-desc">Update a user's plan. Triggered by <code>/grant @user pro</code> or <code>/grant @user free</code> in Discord.</p>
+          <p class="param-label">Request Body</p>
+          <table class="param-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            <tr><td>discordId<span class="req">required</span></td><td>string</td><td>Target user's Discord ID</td></tr>
+            <tr><td>plan<span class="req">required</span></td><td><code>free</code> | <code>pro</code></td><td>Plan to assign</td></tr>
+          </table>
+          <p class="param-label">Response 200</p>
+          <div class="code-block">
+            <div class="code-bar"><span class="code-bar-label">json</span></div>
+            <pre>{ <span class="ck">"ok"</span>: <span class="cb">true</span>, <span class="ck">"message"</span>: <span class="cs">"Plan updated to pro"</span> }</pre>
+          </div>
+          <p class="param-label">Response 404</p>
+          <div class="code-block">
+            <div class="code-bar"><span class="code-bar-label">json</span></div>
+            <pre>{ <span class="ck">"ok"</span>: <span class="cr">false</span>, <span class="ck">"error"</span>: <span class="cs">"User not found"</span> }</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="endpoint" id="revoke">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method-badge mb-post">POST</span>
+          <span class="ep-path"><span class="ep-base">/api/</span>revoke</span>
+          <span class="auth-tag at-bot">Bot Only</span>
+          <span class="ep-toggle">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="ep-desc">Permanently delete a user's session. Triggered by <code>/revoke @user</code> in Discord. The user will need to run <code>/register</code> again to get a new key.</p>
+          <p class="param-label">Request Body</p>
+          <table class="param-table">
+            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            <tr><td>discordId<span class="req">required</span></td><td>string</td><td>Target user's Discord ID</td></tr>
+          </table>
+          <p class="param-label">Response 200</p>
+          <div class="code-block">
+            <div class="code-bar"><span class="code-bar-label">json</span></div>
+            <pre>{ <span class="ck">"ok"</span>: <span class="cb">true</span>, <span class="ck">"message"</span>: <span class="cs">"Session revoked"</span> }</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="endpoint" id="sessions">
+        <div class="endpoint-header" onclick="toggle(this)">
+          <span class="method-badge mb-get">GET</span>
+          <span class="ep-path"><span class="ep-base">/api/</span>sessions</span>
+          <span class="auth-tag at-bot">Bot Only</span>
+          <span class="ep-toggle">▶</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="ep-desc">List all registered sessions sorted by creation date. Triggered by <code>/sessions</code> in Discord.</p>
+          <p class="param-label">Response 200</p>
+          <div class="code-block">
+            <div class="code-bar"><span class="code-bar-label">json</span><button class="code-copy" onclick="copyCode(this)">copy</button></div>
+            <pre>{
+  <span class="ck">"ok"</span>:    <span class="cb">true</span>,
+  <span class="ck">"count"</span>: <span class="cn">3</span>,
+  <span class="ck">"data"</span>: [
+    {
+      <span class="ck">"key"</span>:         <span class="cs">"SK-AbCd1234-2025"</span>,
+      <span class="ck">"displayName"</span>: <span class="cs">"StreamerName"</span>,
+      <span class="ck">"plan"</span>:        <span class="cs">"pro"</span>,
+      <span class="ck">"createdAt"</span>:   <span class="cs">"2025-01-01T00:00:00.000Z"</span>,
+      <span class="ck">"lastAccess"</span>:  <span class="cs">"2025-06-01T12:00:00.000Z"</span>
+    }
+  ]
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Errors -->
+    <div class="section" id="errors">
+      <div class="section-head"><span class="section-title">Error Codes</span><div class="section-line"></div></div>
+      <table class="error-table">
+        <tr><th>Status</th><th>Meaning</th></tr>
+        <tr><td class="e400">400</td><td>Bad request — missing or invalid fields in body or query params</td></tr>
+        <tr><td class="e401">401</td><td>Unauthorized — missing or incorrect <code>x-bot-secret</code> header</td></tr>
+        <tr><td class="e404">404</td><td>Not found — session or user does not exist</td></tr>
+        <tr><td class="e405">405</td><td>Method not allowed — wrong HTTP method for this route</td></tr>
+        <tr><td class="e500">500</td><td>Server error — check MongoDB connection string and Vercel logs</td></tr>
+      </table>
+    </div>
+
+    <!-- Deploy -->
+    <div class="section" id="deploy">
+      <div class="section-head"><span class="section-title">Deployment</span><div class="section-line"></div></div>
+      <div class="deploy-steps">
+        <div class="deploy-step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <p>Install Vercel CLI and deploy</p>
+            <div class="code-block">
+              <div class="code-bar"><span class="code-bar-label">bash</span><button class="code-copy" onclick="copyCode(this)">copy</button></div>
+              <pre>npm install -g vercel
+vercel --prod</pre>
+            </div>
+          </div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <p>Set environment variables in the Vercel dashboard</p>
+            <div class="code-block">
+              <div class="code-bar"><span class="code-bar-label">env</span><button class="code-copy" onclick="copyCode(this)">copy</button></div>
+              <pre>MONGODB_URI = mongodb+srv://user:pass@cluster.mongodb.net/
+MONGODB_DB  = waveboard
+BOT_SECRET  = your-random-secret-here</pre>
+            </div>
+          </div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <p>Add the same <code>BOT_SECRET</code> to your Discord bot <code>.env</code></p>
+            <div class="code-block">
+              <div class="code-bar"><span class="code-bar-label">env</span><button class="code-copy" onclick="copyCode(this)">copy</button></div>
+              <pre>BOT_SECRET = your-random-secret-here
+API_URL    = https://your-project.vercel.app</pre>
+            </div>
+          </div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <p>Verify the deployment is live</p>
+            <div class="code-block">
+              <div class="code-bar"><span class="code-bar-label">bash</span></div>
+              <pre>curl https://your-project.vercel.app/api/ping</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function toggle(header) {
+    header.closest('.endpoint').classList.toggle('open')
+  }
+
+  function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre')
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+      btn.textContent = 'copied!'
+      btn.style.color = 'var(--green)'
+      setTimeout(() => { btn.textContent = 'copy'; btn.style.color = ''; }, 2000)
+    })
+  }
+
+  // Active nav highlight on scroll
+  const ids = ['overview','ping','verify','register','grant','revoke','sessions','errors','deploy']
+  const navLinks = document.querySelectorAll('.nav-item')
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(n => n.classList.toggle('active', n.getAttribute('href') === '#' + e.target.id))
+      }
+    })
+  }, { threshold: 0.4 })
+  ids.forEach(id => { const el = document.getElementById(id); if (el) observer.observe(el) })
+
+  // Live ping status check
+  async function checkStatus() {
+    const pill = document.getElementById('statusPill')
+    const dot  = document.getElementById('statusDot')
+    const text = document.getElementById('statusText')
+    try {
+      const res  = await fetch('/api/ping')
+      const data = await res.json()
+      if (data.ok) {
+        pill.className = 'status-pill'
+        dot.className  = 'status-dot'
+        text.textContent = 'API online'
+      } else throw new Error()
+    } catch {
+      pill.className = 'status-pill offline'
+      dot.className  = 'status-dot'
+      text.textContent = 'API offline'
+    }
+  }
+  checkStatus()
+</script>
+</body>
+</html>
